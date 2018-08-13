@@ -3,32 +3,32 @@ const sha256 = require('sha256')
 function Blockchain(){
     this.chain = [];
     this.pendingTransactions = [];
-
-    this.createNewBlock(100, '0', '0');
+    this.pendingDocuments = []
 }
 
-Blockchain.prototype.createNewBlock = function(nonce, previousBlockHash, hash){
+Blockchain.prototype.createNewBlock = (nonce, previousBlockHash, hash)=>{
     const newBlock = {
         index: this.chain.length+1,
         timestamp: Date.now(),
         transactions: this.pendingTransactions,
+        documents: this.newDocuments,
         nonce: nonce,
         hash: hash,
         previousBlockHash: previousBlockHash
     };
 
     this.pendingTransactions = [];
-
+    this.newDocuments = [];
     this.chain.push(newBlock);
 
     return newBlock;
 }
 
-Blockchain.prototype.getLastBlock = function(){
+Blockchain.prototype.getLastBlock = ()=>{
     return this.chain[this.chain.length-1];
 }
 
-Blockchain.prototype.createNewTransaction = function(amount, sender, recipient){
+Blockchain.prototype.createNewTransaction = (amount, sender, recipient)=>{
     const newTransaction = {
         amount: amount,
         sender: sender,
@@ -40,13 +40,25 @@ Blockchain.prototype.createNewTransaction = function(amount, sender, recipient){
     return this.getLastBlock().index+1;
 }
 
-Blockchain.prototype.hashBlock = function(previousBlockHash, currentBlockData, nonce){
+Blockchain.prototype.createNewDocument = (owner, title, document)=>{
+    const newDocument = {
+        owner: owner,
+        title: title,
+        document: document
+    };  
+
+    this.pendingDocuments.push(newDocument)
+    //return this.getLastBlock()['index']+1;
+    return this.getLastBlock().index+1;
+}
+
+Blockchain.prototype.hashBlock = (previousBlockHash, currentBlockData, nonce)=>{
     const dataAsString = previousBlockHash+nonce.toString()+JSON.stringify(currentBlockData)
     const hash = sha256(dataAsString);
     return hash;
 }
 
-Blockchain.prototype.proofOfWork = function(previousBlockHash, currentBlockData){
+Blockchain.prototype.proofOfWork = (previousBlockHash, currentBlockData)=>{
     let nonce = 0;
     let hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
     while (hash.substring(0,4) != '0000') {
