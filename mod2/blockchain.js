@@ -1,10 +1,13 @@
 const sha256 = require('sha256');
+const currentNodeUrl = process.argv[3];
+const uuid = require('uuid/v1');
 
 class Transaction{
     constructor(amount, sender, recipient){
         this.amount = amount;
         this.sender = sender;
         this.recipient = recipient;
+        this.transactionId = uuid().split('-').join('');
     }
 }
 
@@ -14,10 +17,15 @@ class Document{
         this.title = title;
         this.document = document;
     }
+
+    //encrypt document method
+
+    //decrypt document method
 }
 
 class Block{
-    constructor(pendingTransactions, pendingDocuments, previousHash){
+    constructor(index, pendingTransactions, pendingDocuments, previousHash){
+        this.index = index,
         this.timestamp = Date.now(),
         this.transactions = pendingTransactions,
         this.documents = pendingDocuments,
@@ -27,7 +35,7 @@ class Block{
     }
 
     calculateHash(){
-        return(sha256(this.timestamp+JSON.stringify(this.transactions)+JSON.stringify(this.documents)+this.nonce.toString()+this.previousHash))
+        return(sha256(JSON.stringify(this.transactions)+JSON.stringify(this.documents)+this.nonce.toString()+this.previousHash))
     }
 
     mineBlock(difficulty){
@@ -46,10 +54,12 @@ class Blockchain{
         this.miningReward = 100;
         this.pendingTransactions = [];
         this.pendingDocuments = [];
+        this.currentNodeUrl = currentNodeUrl;
+        this.networkNodes = [];
     }
 
     createGenesisBlock(){
-        return new Block([], [], '0')
+        return new Block(1, [], [], '0')
     }
 
     getLatestBlock(){
@@ -57,27 +67,35 @@ class Blockchain{
     }
 
     createTransaction(amount, sender, recipient){
-        const latestTransaction = new Transaction(amount, sender, recipient)
-        this.pendingTransactions.push(latestTransaction)
+        return new Transaction(amount, sender, recipient)
+    }
+
+    addTransactionToPendingTransactions(transaction){
+        this.pendingTransactions.push(transaction)
     }
 
     createDocument(owner, title, document){
-        const latestDocument = new Document(owner, title, document)
-        this.pendingDocuments.push(latestDocument)
+        return new Document(owner, title, document)
     }
 
-    createAndMineNewBlock(miningRewardAddress){
-        let block = new Block(this.pendingTransactions, this.pendingDocuments, this.getLatestBlock().hash);
+    addDocumentToPendingDocuments(document){
+        this.pendingDocuments.push(document)
+    }
+
+    createAndMineNewBlock(/*miningRewardAddress*/){
+        let block = new Block(this.chain.length+1, this.pendingTransactions, this.pendingDocuments, this.getLatestBlock().hash);
         block.mineBlock(this.difficulty);
 
         console.log('block successfully mined');
         this.chain.push(block)
 
         this.pendingTransactions = [
-            new Transaction(this.miningReward, null, miningRewardAddress)
+            //new Transaction(this.miningReward, null, miningRewardAddress)
         ];
 
         this.pendingDocuments = [];
+
+        return block;
     }
 
     isChainValid(){
@@ -97,6 +115,7 @@ class Blockchain{
     }
 
     getBalanceOfAddress(address){
+        
         let balance = 0;
 
         for(const block of this.chain){
@@ -109,8 +128,18 @@ class Blockchain{
                 }
             }
         }
-        // return balance;
+        return balance;
         console.log(balance);
+    }
+
+    getDocuments(){
+        let documents = [];
+        for(const block of this.chain){
+            for(const document of block.documents){
+                documents.push(document)
+            }
+        }
+        return documents;
     }
 }
 
